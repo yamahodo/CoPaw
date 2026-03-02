@@ -32,6 +32,7 @@ class ProviderDefinition(BaseModel):
     )
     is_custom: bool = Field(default=False)
     is_local: bool = Field(default=False)
+    is_web: bool = Field(default=False)
     chat_model: str = Field(
         default="OpenAIChatModel",
         description="Chat model class name (e.g., 'OpenAIChatModel')",
@@ -84,6 +85,7 @@ class ProvidersData(BaseModel):
         default_factory=dict,
     )
     active_llm: ModelSlotConfig = Field(default_factory=ModelSlotConfig)
+    web_credentials: Dict[str, dict] = Field(default_factory=dict)
 
     def get_credentials(self, provider_id: str) -> tuple[str, str]:
         """Return ``(base_url, api_key)`` for *provider_id*."""
@@ -102,6 +104,8 @@ class ProvidersData(BaseModel):
         without an API key, since it typically runs on localhost and uses an
         unauthenticated OpenAI-compatible endpoint.
         """
+        if defn.is_web:
+            return defn.id in self.web_credentials
         if defn.is_local or defn.id == "ollama":
             return True
         cpd = self.custom_providers.get(defn.id)
@@ -137,3 +141,5 @@ class ResolvedModelConfig(BaseModel):
     base_url: str = Field(default="")
     api_key: str = Field(default="")
     is_local: bool = Field(default=False)
+    is_web: bool = Field(default=False)
+    web_provider_id: str = Field(default="")

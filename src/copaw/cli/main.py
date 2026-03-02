@@ -86,6 +86,11 @@ from .uninstall_cmd import uninstall_cmd  # noqa: E402
 
 _record(".uninstall_cmd", time.perf_counter() - _t)
 
+_t = time.perf_counter()
+from .zero_token_cmd import zero_token_group  # noqa: E402
+
+_record(".zero_token_cmd", time.perf_counter() - _t)
+
 _total = time.perf_counter() - _t0_main
 _init_timings.append(("(total imports)", _total))
 logger.debug("%.3fs (total imports)", _total)
@@ -134,3 +139,4 @@ cli.add_command(init_cmd)
 cli.add_command(models_group)
 cli.add_command(skills_group)
 cli.add_command(uninstall_cmd)
+cli.add_command(zero_token_group)

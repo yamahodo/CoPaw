@@ -22,6 +22,7 @@ from .registry import (
     sync_custom_providers,
     sync_local_models,
     sync_ollama_models,
+    sync_web_providers,
     unregister_custom_provider,
     validate_custom_provider_id,
 )
@@ -149,8 +150,8 @@ def _validate_active_llm(data: ProvidersData) -> None:
 def _ensure_all_providers(providers: dict[str, ProviderSettings]) -> None:
     """Ensure every built-in has an entry; remove stale custom/local ones."""
     for pid, defn in PROVIDERS.items():
-        if defn.is_custom or defn.is_local:
-            # Custom and local providers don't need ProviderSettings entries
+        if defn.is_custom or defn.is_local or defn.is_web:
+            # Custom, local, and web providers don't need ProviderSettings
             providers.pop(pid, None)
             continue
         if pid not in providers:
@@ -189,12 +190,26 @@ def load_providers_json(path: Optional[Path] = None) -> ProvidersData:
     sync_custom_providers(custom_providers)
     sync_local_models()
     sync_ollama_models()
+    sync_web_providers()
     _ensure_all_providers(providers)
+
+    # Parse web credentials
+    web_credentials: dict[str, dict] = {}
+    if path.is_file():
+        try:
+            with open(path, "r", encoding="utf-8") as fh2:
+                raw2: dict = json.load(fh2)
+            for pid, val in raw2.get("web_credentials", {}).items():
+                if isinstance(val, dict):
+                    web_credentials[pid] = val
+        except (json.JSONDecodeError, ValueError):
+            pass
 
     data = ProvidersData(
         providers=providers,
         custom_providers=custom_providers,
         active_llm=active_llm,
+        web_credentials=web_credentials,
     )
     _validate_active_llm(data)
     save_providers_json(data, path)
@@ -220,6 +235,8 @@ def save_providers_json(
         },
         "active_llm": data.active_llm.model_dump(mode="json"),
     }
+    if data.web_credentials:
+        out["web_credentials"] = data.web_credentials
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(out, fh, indent=2, ensure_ascii=False)
 
@@ -287,6 +304,14 @@ def _resolve_slot(
         return ResolvedModelConfig(
             model=slot.model,
             is_local=True,
+        )
+
+    # Web providers use browser-captured credentials
+    if defn is not None and defn.is_web:
+        return ResolvedModelConfig(
+            model=slot.model,
+            is_web=True,
+            web_provider_id=pid,
         )
 
     if pid not in data.custom_providers and pid not in data.providers:

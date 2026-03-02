@@ -20,6 +20,7 @@ from .registry import (
     is_builtin,
     list_providers,
     sync_local_models,
+    sync_web_providers,
 )
 from .store import (
     add_model,
@@ -32,6 +33,15 @@ from .store import (
     save_providers_json,
     set_active_llm,
     update_provider_settings,
+)
+from .web_models import WebCredential
+from .web_registry import WEB_PROVIDERS, list_web_provider_ids
+from .web_store import (
+    delete_web_credential,
+    get_web_credential,
+    is_credential_valid,
+    load_web_credentials,
+    save_web_credential,
 )
 
 __all__ = [
@@ -51,6 +61,7 @@ __all__ = [
     "is_builtin",
     "list_providers",
     "sync_local_models",
+    "sync_web_providers",
     "add_model",
     "create_custom_provider",
     "delete_custom_provider",
@@ -61,4 +72,12 @@ __all__ = [
     "save_providers_json",
     "set_active_llm",
     "update_provider_settings",
+    "WebCredential",
+    "WEB_PROVIDERS",
+    "list_web_provider_ids",
+    "delete_web_credential",
+    "get_web_credential",
+    "is_credential_valid",
+    "load_web_credentials",
+    "save_web_credential",
 ]

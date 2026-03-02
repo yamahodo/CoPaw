@@ -18,6 +18,7 @@ import {
   Globe,
   Settings,
   Plug,
+  KeyRound,
 } from "lucide-react";
 
 const { Sider } = Layout;
@@ -32,6 +33,7 @@ const keyToPath: Record<string, string> = {
   workspace: "/workspace",
   models: "/models",
   environments: "/environments",
+  "zero-token": "/zero-token",
   "agent-config": "/agent-config",
 };
 
@@ -133,6 +135,11 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
           key: "environments",
           label: t("nav.environments"),
           icon: <Globe size={16} />,
+        },
+        {
+          key: "zero-token",
+          label: "Zero-Token",
+          icon: <KeyRound size={16} />,
         },
       ],
     },

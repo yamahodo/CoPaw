@@ -213,6 +213,12 @@ def _create_model_instance(
         # Local models use OpenAIChatModel-compatible formatter
         return model, OpenAIChatModel
 
+    # Handle web models (Zero-Token browser-based auth)
+    if llm_cfg and llm_cfg.is_web:
+        model = _create_web_model_instance(llm_cfg)
+        # Web models use OpenAIChatModel-compatible formatter
+        return model, OpenAIChatModel
+
     # Handle remote models - determine chat_model_class from provider config
     chat_model_class = _get_chat_model_class_from_provider()
 
@@ -282,6 +288,39 @@ def _create_remote_model_instance(
         client_kwargs={"base_url": base_url},
     )
 
+    return model
+
+
+def _create_web_model_instance(
+    llm_cfg: "ResolvedModelConfig",
+) -> ChatModelBase:
+    """Create a web chat model instance using browser-captured credentials.
+
+    Args:
+        llm_cfg: Resolved model config with is_web=True and web_provider_id set.
+
+    Returns:
+        Configured web chat model instance.
+    """
+    from ..providers.web_store import get_web_credential
+    from ..providers.registry import get_chat_model_class, get_provider_chat_model
+
+    provider_id = llm_cfg.web_provider_id
+    credential = get_web_credential(provider_id)
+    if credential is None:
+        raise ValueError(
+            f"No web credential found for provider '{provider_id}'. "
+            "Please run 'copaw zero-token login' first.",
+        )
+
+    chat_model_name = get_provider_chat_model(provider_id)
+    chat_model_class = get_chat_model_class(chat_model_name)
+
+    model = chat_model_class(
+        llm_cfg.model,
+        credential=credential,
+        stream=True,
+    )
     return model
 
 

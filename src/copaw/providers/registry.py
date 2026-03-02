@@ -264,6 +264,49 @@ _CHAT_MODEL_MAP: dict[str, Type[ChatModelBase]] = {
     "OpenAIChatModel": OpenAIChatModel,
 }
 
+# Web chat model names — lazily loaded to avoid circular imports.
+_WEB_CHAT_MODEL_NAMES: frozenset[str] = frozenset(
+    [
+        "DeepSeekWebChatModel",
+        "ClaudeWebChatModel",
+        "ChatGPTWebChatModel",
+        "QwenWebChatModel",
+        "KimiWebChatModel",
+        "DoubaoWebChatModel",
+        "GeminiWebChatModel",
+        "GrokWebChatModel",
+        "GLMWebChatModel",
+    ],
+)
+
+
+def _lazy_load_web_chat_model(name: str) -> Type[ChatModelBase]:
+    """Lazily import a web chat model class by name."""
+    from .web_chat_models import (
+        ChatGPTWebChatModel,
+        ClaudeWebChatModel,
+        DeepSeekWebChatModel,
+        DoubaoWebChatModel,
+        GeminiWebChatModel,
+        GLMWebChatModel,
+        GrokWebChatModel,
+        KimiWebChatModel,
+        QwenWebChatModel,
+    )
+
+    _mapping: dict[str, Type[ChatModelBase]] = {
+        "DeepSeekWebChatModel": DeepSeekWebChatModel,
+        "ClaudeWebChatModel": ClaudeWebChatModel,
+        "ChatGPTWebChatModel": ChatGPTWebChatModel,
+        "QwenWebChatModel": QwenWebChatModel,
+        "KimiWebChatModel": KimiWebChatModel,
+        "DoubaoWebChatModel": DoubaoWebChatModel,
+        "GeminiWebChatModel": GeminiWebChatModel,
+        "GrokWebChatModel": GrokWebChatModel,
+        "GLMWebChatModel": GLMWebChatModel,
+    }
+    return _mapping[name]
+
 
 def get_chat_model_class(chat_model_name: str) -> Type[ChatModelBase]:
     """Get chat model class by name.
@@ -274,4 +317,16 @@ def get_chat_model_class(chat_model_name: str) -> Type[ChatModelBase]:
     Returns:
         Chat model class, defaults to OpenAIChatModel if not found.
     """
-    return _CHAT_MODEL_MAP.get(chat_model_name, OpenAIChatModel)
+    cls = _CHAT_MODEL_MAP.get(chat_model_name)
+    if cls is not None:
+        return cls
+    if chat_model_name in _WEB_CHAT_MODEL_NAMES:
+        return _lazy_load_web_chat_model(chat_model_name)
+    return OpenAIChatModel
+
+
+def sync_web_providers() -> None:
+    """Register all web providers into the global PROVIDERS dict."""
+    from .web_registry import sync_web_providers as _sync
+
+    _sync(PROVIDERS)
